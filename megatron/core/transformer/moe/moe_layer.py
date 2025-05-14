@@ -171,13 +171,17 @@ class MoELayer(BaseMoELayer):
 
         # process MoE
         def custom_forward(hidden_states):
-            probs, routing_map = self.router(hidden_states)
-            (dispatched_input, tokens_per_expert, permuted_probs) = (
+            probs, routing_map = self.router(hidden_states) # [num_tokens, num_experts]
+            # [num_dispatched_tokens, hidden_size], [num_experts], [num_dispatched_tokens]
+            # sum(tokens_per_expert) = num_dispatched_tokens
+            (dispatched_input, tokens_per_expert, permuted_probs) = ( 
                 self.token_dispatcher.token_permutation(hidden_states, probs, routing_map)
             )
+            # [num_dispatched_tokens, hidden_size]
             expert_output, mlp_bias = self.experts(
                 dispatched_input, tokens_per_expert, permuted_probs
             )
+            # [num_tokens, hidden_size]
             output, mlp_bias = self.token_dispatcher.token_unpermutation(expert_output, mlp_bias)
             if self.use_shared_expert and not self.shared_expert_overlap:
                 # if shared_expert_overlap is True, the expert calculation happens in

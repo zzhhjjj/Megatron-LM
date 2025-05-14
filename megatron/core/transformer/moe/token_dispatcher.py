@@ -497,13 +497,13 @@ class MoEAlltoAllTokenDispatcher(MoETokenDispatcher):
         )
         self.hidden_shape_before_permute = hidden_states.shape
         (
-            permutated_local_input_tokens,
-            permuted_probs,
-            self.reversed_local_input_permutation_mapping,
+            permutated_local_input_tokens, # [num_tokens * topk, hidden_size]
+            permuted_probs, # [num_tokens * topk]
+            self.reversed_local_input_permutation_mapping, # [num_tokens * topk]
         ) = permute(
-            hidden_states,
-            routing_map,
-            probs=probs,
+            hidden_states, # [num_tokens, hidden_size]
+            routing_map, # [num_tokens, num_experts]
+            probs=probs, # [num_tokens, num_experts]
             num_out_tokens=self.num_out_tokens,
             fused=self.config.moe_permute_fusion,
             drop_and_pad=self.drop_and_pad,
@@ -565,7 +565,7 @@ class MoEAlltoAllTokenDispatcher(MoETokenDispatcher):
             else:
                 global_input_tokens, global_probs = sort_chunks_by_idxs(
                     global_input_tokens,
-                    self.num_global_tokens_per_local_expert.ravel(),
+                    self.num_global_tokens_per_local_expert.ravel(), # [num_experts], number of tokens assigned to each expert.
                     self.sort_input_by_local_experts,
                     probs=global_probs,
                     fused=self.config.moe_permute_fusion,

@@ -11,6 +11,7 @@ import math
 import os
 import sys
 from typing import List
+import wandb
 
 import torch.distributed
 from .log_handler import CustomHandler
@@ -1268,6 +1269,7 @@ def train_step(forward_step_func, data_iterator,
             decoder_seq_length=args.decoder_seq_length,
             forward_only=False,
             adjust_tensor_shapes_fn=adjust_tensor_shapes_fn)
+        # wandb.log({"train/loss": losses_reduced[0]['loss']})
     should_checkpoint, should_exit, exit_code = rerun_state_machine.should_checkpoint_and_exit()
     if should_exit:
         return {}, True, should_checkpoint, should_exit, exit_code, None, None
@@ -1431,11 +1433,13 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
         if wandb_writer:
             wandb_writer.log({'samples vs steps': args.consumed_train_samples},
                              iteration)
+            wandb_writer.log({'consumed_tokens': args.consumed_train_samples * args.seq_length}, iteration) # for Nanotron 
         writer.add_scalar('learning-rate', learning_rate, iteration)
         writer.add_scalar('learning-rate vs samples', learning_rate,
                             args.consumed_train_samples)
         if wandb_writer:
-            wandb_writer.log({'learning-rate': learning_rate}, iteration)
+            # wandb_writer.log({'learning-rate': learning_rate}, iteration)
+            wandb_writer.log({'lr': learning_rate}, iteration) # for Nanotron 
         if args.decoupled_lr is not None:
             writer.add_scalar('decoupled-learning-rate', decoupled_learning_rate, iteration)
         if args.skipped_train_samples > 0:
@@ -1452,7 +1456,11 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
             writer.add_scalar(key + ' vs samples', loss_dict[key],
                               args.consumed_train_samples)
             if wandb_writer:
-                wandb_writer.log({key: loss_dict[key]}, iteration)
+                # wandb_writer.log({key: loss_dict[key]}, iteration)
+                if key == 'lm loss':
+                    wandb_writer.log({'lm_loss': loss_dict[key]}, iteration) # for Nanotron 
+                else:
+                    wandb_writer.log({key: loss_dict[key]}, iteration)
         if args.log_loss_scale_to_tensorboard:
             writer.add_scalar('loss-scale', loss_scale, iteration)
             writer.add_scalar('loss-scale vs samples', loss_scale,
@@ -1470,7 +1478,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
             writer.add_scalar('grad-norm vs samples', grad_norm,
                               args.consumed_train_samples)
             if wandb_writer:
-                wandb_writer.log({'grad-norm': grad_norm}, iteration)
+                # wandb_writer.log({'grad-norm': grad_norm}, iteration)
+                wandb_writer.log({'grad_norm': grad_norm}, iteration) # for Nanotron 
         if num_zeros_in_grad is not None:
             writer.add_scalar('num-zeros', num_zeros_in_grad, iteration)
             writer.add_scalar('num-zeros vs samples', num_zeros_in_grad,
@@ -1549,8 +1558,9 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
                 writer.add_scalar('iteration-time',
                                   elapsed_time_per_iteration, iteration)
             if wandb_writer:
-                wandb_writer.log({'iteration-time': elapsed_time_per_iteration},
-                                 iteration)
+                # wandb_writer.log({'iteration-time': elapsed_time_per_iteration},
+                #                  iteration)
+                wandb_writer.log({'time_per_iteration_ms': elapsed_time_per_iteration*1000}, iteration) # for Nanotron 
         log_string = f" [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]"
         log_string += ' iteration {:8d}/{:8d} |'.format(
             iteration, args.train_iters)
@@ -1567,7 +1577,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
                 if writer:
                     writer.add_scalar('throughput', throughput, iteration)
                 if wandb_writer:
-                    wandb_writer.log({'throughput': throughput}, iteration)
+                    # wandb_writer.log({'throughput': throughput}, iteration)
+                    wandb_writer.log({'model_tflops_per_gpu': throughput}, iteration) # for Nanotron 
         # Decoupled_learning_rate should be not None only on first and last pipeline stage.
         log_string += f' learning rate: {learning_rate:.6E} |'
         if args.decoupled_lr is not None and (mpu.is_pipeline_first_stage(ignore_virtual=True) or

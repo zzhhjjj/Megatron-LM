@@ -327,6 +327,13 @@ class _GPT2BPETokenizer(MegatronTokenizer):
         )
         self.eod_id = self.tokenizer.encoder['<|endoftext|>']
 
+        # Temporary solution for Qwen/Qwen1.5-MoE-A2.7B
+        # try:
+        #     self.eod_id = self.tokenizer.encoder['<|endoftext|>']
+        # except KeyError:
+        #     print("KeyError: <|endoftext|> not found in vocab.json")
+        #     self.eod_id = 151643 # hardcode the eod id for Qwen/Qwen1.5-MoE-A2.7B
+
     @property
     def vocab_size(self):
         return len(self.tokenizer.encoder)

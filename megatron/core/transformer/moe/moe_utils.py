@@ -298,10 +298,14 @@ def permute(
         token_indices = (
             torch.arange(num_tokens, device=routing_map.device).unsqueeze(0).expand(num_experts, -1)
         )
+        # selected tokens for each expert. from 0th expert to num_experts - 1 th expert. [0,    1,    4,  ...]
+        # the beginning belong to the first expert. the end belong to the num_experts - 1 th expert.
+        # [num_tokens * topk]
         sorted_indices = token_indices.masked_select(routing_map)
 
     # use the mapping to permute the tokens
-    permuted_input = tokens.index_select(0, sorted_indices)
+    # [num_tokens * topk, hidden_size]. 
+    permuted_input = tokens.index_select(0, sorted_indices) 
 
     if probs is not None:
         permuted_probs = probs.T.contiguous().masked_select(routing_map)
@@ -675,7 +679,7 @@ def track_moe_metrics(
     # Initialize the tracker if force_initialize is True
     if force_initialize:
         if track_names is not None:
-            for key in track_names:
+            for key in track_names: # track_names = ['load_balancing_loss', 'z_loss']
                 if key not in tracker:
                     tracker[key] = {}
                     tracker[key]["values"] = torch.zeros(num_layers, device="cuda")

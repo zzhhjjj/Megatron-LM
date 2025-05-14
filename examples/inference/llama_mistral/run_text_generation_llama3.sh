@@ -10,16 +10,19 @@ DISTRIBUTED_ARGS="--nproc_per_node 1 \
                   --master_addr 0.0.0.0 \
                   --master_port 6000"
 
-# Ensure CHECKPOINT and TOKENIZER_MODEL are provided
-if [ -z "$1" ] || [ -z "$2" ]; then
-  echo "Error: You must provide CHECKPOINT and TOKENIZER_MODEL as command-line arguments."
-  echo "Usage: $0 /path/to/checkpoint /path/to/tokenizer_model"
-  exit 1
-fi
+# # Ensure CHECKPOINT and TOKENIZER_MODEL are provided
+# if [ -z "$1" ] || [ -z "$2" ]; then
+#   echo "Error: You must provide CHECKPOINT and TOKENIZER_MODEL as command-line arguments."
+#   echo "Usage: $0 /path/to/checkpoint /path/to/tokenizer_model"
+#   exit 1
+# fi
 
 # Assign command-line arguments to variables
-CHECKPOINT=$1
-TOKENIZER_MODEL=$2
+# CHECKPOINT=$1
+# TOKENIZER_MODEL=$2
+
+CHECKPOINT=/fsx/haojun/Megatron-files/megatron_checkpoints/Meta-Llama-3-8B/
+TOKENIZER_MODEL=/fsx/haojun/Megatron-files/tokenizers/Meta-Llama-3-8B
 
 pip install flask-restful
 
