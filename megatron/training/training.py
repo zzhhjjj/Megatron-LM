@@ -1560,7 +1560,13 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
             if wandb_writer:
                 # wandb_writer.log({'iteration-time': elapsed_time_per_iteration},
                 #                  iteration)
-                wandb_writer.log({'time_per_iteration_ms': elapsed_time_per_iteration*1000}, iteration) # for Nanotron 
+                wandb_writer.log({'time_per_iteration_ms': elapsed_time_per_iteration*1000}, iteration) # for Nanotron
+                single_gpu_batch_size = float(args.micro_batch_size) * get_num_microbatches() * args.data_parallel_size / args.world_size
+                tokens_per_sec_per_gpu = single_gpu_batch_size * args.seq_length / elapsed_time_per_iteration
+                tokens_per_sec = tokens_per_sec_per_gpu * args.world_size
+                wandb_writer.log({'tokens_per_sec': tokens_per_sec}, iteration) # for Nanotron 
+                wandb_writer.log({'tokens_per_sec_per_gpu': tokens_per_sec_per_gpu}, iteration) # for Nanotron 
+                wandb_writer.log({'global_batch_size': args.global_batch_size*args.seq_length}, iteration) # for Nanotron 
         log_string = f" [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]"
         log_string += ' iteration {:8d}/{:8d} |'.format(
             iteration, args.train_iters)
